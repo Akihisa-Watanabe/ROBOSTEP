@@ -65,13 +65,153 @@ int move_arm(char option){
 
 /**
  * @fn
+ * @brief encoder program
+ * @param 
+ * @return 
+ */
+
+// program to obtain the angle the motor moved
+Ec::Ec(int res, int multi) : count_(0), pre_omega_(0), pre_count_(0), resolution_(res), multiplication_(multi)
+{
+    timer_.start();
+    setGearRatio(1);
+}
+ 
+int Ec::getCount() const
+{
+    return count_;
+}
+ 
+double Ec::getRad() const
+{
+    return count_ * 2.0f * M_PI / (multiplication_ * resolution_ * gear_ratio_);
+}
+double Ec::getDeg() const
+{
+    return count_ * 2.0f * 180.0 / (multiplication_ * resolution_ * gear_ratio_);
+}
+void Ec::calOmega()
+{
+    double t = timer_.read();
+    double delta_time = t - ptw_;
+    acceleration_ = (pre_omega_ - pre2_omega_) / delta_time;
+    pre2_omega_ = pre_omega_;
+    pre_omega_ = omega_;
+    omega_ = (count_ - pre_count_) * 2.0f * M_PI / (multiplication_ * resolution_ * delta_time);
+    omega_ /= gear_ratio_;
+    pre_count_ = count_;
+    ptw_ = t;
+}
+ 
+double Ec::getOmega() const
+{
+    return omega_;
+}
+double Ec::getAcceleration() const
+{
+    return acceleration_;
+}
+void Ec::setResolution(int res)
+{
+    resolution_ = res;
+}
+ 
+/*reset関数の定義*/
+/*エンコーダを初期状態に戻すことができる*/
+void Ec::reset()
+{
+    count_ = 0;
+    pre_count_ = 0, omega_ = 0;
+    ptw_ = 0;
+    timer_.stop();
+    timer_.reset();
+    timer_.start();
+}
+void Ec::setGearRatio(double gear_r)
+{
+    gear_ratio_ = gear_r;
+}
+ 
+////////////////////////////////////////////////////1逓倍//////////////////////////////////////////////////////////////////
+Ec1multi::Ec1multi(PinName signalA, PinName signalB, int res) : Ec(res, 1), signalA_(signalA), signalB_(signalB)
+{
+    signalA_.rise(callback(this, &Ec1multi::upA));
+}
+ 
+//ピン変化割り込み関数の定義
+void Ec1multi::upA()
+{
+    if (signalB_.read())
+        count_++;
+    else
+        count_--;
+}
+
+
+/**
+ * @fn
  * @brief アームを回転させる関数
  * @param 
  * @return 
  */
 int rotate_arm(char option){
+    arm_rotate_1 = 0;
+    arm_rotate_2 = 0;
+    int theta = Ec::getDeg() //合ってる？
+    wait(5);
+    switch (option){
+            int i=0;
+        case 0: //箱１の高さまで回転
+            while(i<=0.5){
+                i+=0.1;
+                
+                if(theta<40){
+                arm_rotate_1 = i;
+                arm_rotate_2 = 0;
+                }
+                
+                else if(40<=theta<=45){
+                arm_rotate1=0;
+                arm_rotate2=0;
+                wait(10); //この時間の間回転が止まり、射出
+ 
+                   if(theta>0){
+                   arm_rotate_1 = 0;
+                   arm_rotate_2 = i;
+                  }
+                  else if(theta=0){
+                   arm_rotate_1 = 0;
+                   arm_rotate_2 = 0;
+                }
+           }
+        case 1:　//箱２の高さまで回転
+            while(i<=0.5){
+                i+=0.1;
+            arm_rotate_1 = i;
+            arm_rotate_2 = 0;
+                if(70<theta<75){
+                arm_rotate1=0;
+                arm_rotate2=0;
+                wait(10); //この時間の間モーターが止まり、射出
+                    
+                   if(theta>0){
+                   arm_rotate_1 = 0;
+                   arm_rotate_2 = i;
+                  }
+                  else if(theta=0){
+                   arm_rotate_1 = 0;
+                   arm_rotate_2 = 0;
+                  }
+                }
+            }
+        default:
+            return 0;
+    }
 
+    wait(5);
+    return 1;
 }
+
 
 /**
  * @fn
