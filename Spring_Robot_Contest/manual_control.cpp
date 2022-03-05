@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include "mbed.h"
 #include "EC.h"
+#include "SpeedController.h"
+#include "CalPID.h"
 
 CAN can1(p30,p29);
 Ticker ticker;
@@ -40,17 +42,24 @@ int move_arm(char option){
     arm_up = 0;
     wait(5);
     switch (option){
+            int i=0;
         case 0:
+            while(i<=0.5){
+                i+=0.1;
             arm_down = 0;
-            arm_up = 0.5;
+            arm_up = i;
+            }
         case 1:
-            arm_down = 0.5;
+            while(i<=0.5){
+                i+=0.1;
+            arm_down = i;
             arm_up = 0;
+            }
         default:
             return 0;
     }
 
-    wait(300);
+    wait(5);
     return 1;
 }
 
@@ -75,17 +84,38 @@ int move_rack(char option){
     rack_push = 0;
     wait(5);
     switch (option){
+            int i=0;
         case 0:
+            while(i<=0.5){
+                i+=0.1;
             rack_pull = 0;
-            rack_push = 0.5;
+            rack_push = i;
+            }
         case 1:
-            rack_pull = 0.5;
+            while(i<=0.5){
+                i+=0.1;
+            rack_pull = i;
             rack_push = 0;
+            }
         default:
             return 0;
     }
 
-    wait(300);
+    wait(5);
+    return 1;
+}
+
+/**
+ * @fn
+ * @brief サーボモーターを動かす関数
+ * @param (option) 0:蓋を開ける(初期位置), 1:蓋を閉める
+ * @return int 処理が成功した場合は1を，失敗した場合は0を返す．
+ */
+int servo(char option){
+    
+}
+
+    wait(5);
     return 1;
 }
 
@@ -123,6 +153,9 @@ void control(){
             }
             else if (msg.data[2] != 0){
                 status = move_rack(msg.data[2]);
+            }
+            else if (msg.data[3] != 0){
+                status = servo(msg.data[3]);
             }
 
             if (status == 0){
