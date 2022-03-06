@@ -16,7 +16,6 @@
 #define OMEGA_MAX 50        //ω上限
 #define TIME_STOP 10.0
 
-char can_data[4]={1,0,0,0};//CAN送信用の配列4byte
 unsigned int Count;
 unsigned char Flag;
 double dist;
@@ -24,10 +23,16 @@ double dist;
 Ticker ticker;
 Timer ActiveTime; //タイマー計測用変数
 
-void alert();
+void RiseEcho();
 int move_arm(char option=0);
+void FallEcho();
+void auto_arm(double threshold=100);
+int move_arm(char option);
+int rotate_arm(int min_theta=0, int max_theta=0);
+int move_rack(char option=0);
+int servo_motor();
+void control();
 
-CAN can1(PB_8,PB_9);
 Serial pc(USBTX,USBRX);
 
 
@@ -195,7 +200,7 @@ int move_rack(char option){
  * @param (option) 0:蓋を開ける(初期位置), 1:蓋を閉める
  * @return int 処理が成功した場合は1を，失敗した場合は0を返す．
  */
-int servo_motor(char option){
+int servo_motor(){
     servo.period_us(20000);  //周期設定
     while(1){
         servo.pulsewidth_us(500); //パルス幅変更 開いた状態
@@ -205,18 +210,6 @@ int servo_motor(char option){
     }
     wait(5);
     return 1;
-}
-
-/**
- * @fn
- * @brief コントローラに異常を知らせる関数
- * @param 
- * @return 
- */
-void alert(){
-    can_data[0]=0;//エラーコード
-    can1.write(CANMessage(2,can_data,4));
-    can_data[1]=1;
 }
 
 void print_result(int status){
@@ -250,7 +243,6 @@ void control(){
     print_result(move_rack(0));
     print_result(move_rack(1));
 
-    //alert();
     //printf("Ultrasonic Sensor test.\n")
     //auto_arm(100);
 }
