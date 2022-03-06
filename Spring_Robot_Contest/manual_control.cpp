@@ -23,8 +23,8 @@ PwmOut rack_push(PC_6);
 rack_pull.period(50);
 rack_push.period(50);
 
-PwmOut arm_rotate_1(PC_8); 
-PwmOut arm_rotate_2(PC_6);
+PwmOut arm_rotate_1(PB_6); 
+PwmOut arm_rotate_2(PA_5);
 arm_rotate_1.period(50);
 arm_rotate_2.period(50);
 
@@ -40,20 +40,21 @@ char can_data[4]={1,0,0,0};//CAN送信用の配列4byte
 int move_arm(char option){
     arm_down = 0;
     arm_up = 0;
+    double i=0;
     wait(5);
+    
     switch (option){
-            int i=0;
         case 0:
             while(i<=0.5){
                 i+=0.1;
-            arm_down = 0;
-            arm_up = i;
+                arm_down = 0;
+                arm_up = i;
             }
         case 1:
             while(i<=0.5){
                 i+=0.1;
-            arm_down = i;
-            arm_up = 0;
+                arm_down = i;
+                arm_up = 0;
             }
         default:
             return 0;
