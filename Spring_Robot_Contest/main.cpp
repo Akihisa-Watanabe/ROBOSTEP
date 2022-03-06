@@ -10,7 +10,7 @@
 #include "SpeedController.h"
 #include "CalPID.h"
 
-CAN can1(p30,p29);
+CAN can1(PB_8,PB_9);
 char can_data[4]={1,0,0,0};//CAN送信用の配列4byte
 Ticker ticker;
 
