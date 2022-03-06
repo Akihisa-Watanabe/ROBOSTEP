@@ -29,8 +29,8 @@ PwmOut arm_rotate_2(PA_5);
 arm_rotate_1.period(50);
 arm_rotate_2.period(50);
 
-PwmOut PWM_TRIGER(PB_6); //超音波センサモジュールのTriger端子に入力する信号
-InterruptIn GET_PWM(PC_7); //割り込み入力端子の設定．マイコンから出力したPWM信号をD9端子から取り込む． 
+PwmOut PWM_TRIGER(PC_12); //超音波センサモジュールのTriger端子に入力する信号
+InterruptIn GET_PWM(PC_10); //割り込み入力端子の設定．マイコンから出力したPWM信号をD9端子から取り込む． 
 
 Timer ActiveTime; //タイマー計測用変数
 
