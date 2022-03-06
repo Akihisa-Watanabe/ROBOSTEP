@@ -341,7 +341,7 @@ void control(){
 }
 
 int main(){
-    //ここにアームを上げる処理．
+    move_arm(0);
     wait(10);
     ticker.attach(&control,0.001);
 }
