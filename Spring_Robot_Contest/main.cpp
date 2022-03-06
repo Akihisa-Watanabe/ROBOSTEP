@@ -9,22 +9,6 @@
 #include "EC.h"
 #include "CalPID.h"
 #include "MotorController.h"
-void alert();
-CAN can1(PB_8,PB_9);
-char can_data[4]={1,0,0,0};//CAN送信用の配列4byte
-Ticker ticker;
-
-PwmOut arm_down(PA_12); //0.5出力 で動く、０出力で動かない
-PwmOut arm_up(PA_11);//0.5出力 で動く、０出力で動かない
-
-
-PwmOut rack_pull(PC_8); 
-PwmOut rack_push(PC_6);
-
-
-PwmOut arm_rotate_1(PB_1); 
-PwmOut arm_rotate_2(PB_15);
-
 
 #define RESOLUTION 500      //モーターの分解能　データシート参照
 #define DELTA_T 0.001       //pidの幅
@@ -32,19 +16,29 @@ PwmOut arm_rotate_2(PB_15);
 #define OMEGA_MAX 50        //ω上限
 #define TIME_STOP 10.0
 
+char can_data[4]={1,0,0,0};//CAN送信用の配列4byte
+unsigned int Count;
+unsigned char Flag;
+double dist;
+
+Ticker ticker;
+Timer ActiveTime; //タイマー計測用変数
+
+void alert();
+int move_arm(char option=0);
+
+CAN can1(PB_8,PB_9);
 Serial pc(USBTX,USBRX);
 
-//PID設定
-CalPID rot_speed_pid(0.003,0,0.000013,DELTA_T,DUTY_MAX);
-CalPID rot_duty_pid(0.003,0,0.000013,DELTA_T,DUTY_MAX);
-CalPID rot_omega_pid(10.0,0,0.0100,DELTA_T,OMEGA_MAX);
-Ec1multi rotEC(PC_10,PC_12,RESOLUTION); 
 
-int move_arm(char option=0);
-//モーター設定
-MotorController motor_rot(PC_6,PC_8,DELTA_T, rotEC,rot_speed_pid,rot_omega_pid);
+PwmOut arm_down(PA_12); 
+PwmOut arm_up(PA_11);
 
+PwmOut rack_pull(PC_8); 
+PwmOut rack_push(PC_6);
 
+PwmOut arm_rotate_1(PB_1); 
+PwmOut arm_rotate_2(PB_15);
 
 PwmOut PWM_TRIGER(PC_12); //超音波センサモジュールのTriger端子に入力する信号
 InterruptIn GET_PWM(PC_10); //割り込み入力端子の設定．マイコンから出力したPWM信号をD9端子から取り込む． 
@@ -52,12 +46,14 @@ InterruptIn GET_PWM(PC_10); //割り込み入力端子の設定．マイコン�
 PwmOut servo(PC_7); //pin setting
 
 
-Timer ActiveTime; //タイマー計測用変数
+//PID設定
+CalPID rot_speed_pid(0.003,0,0.000013,DELTA_T,DUTY_MAX);
+CalPID rot_duty_pid(0.003,0,0.000013,DELTA_T,DUTY_MAX);
+CalPID rot_omega_pid(10.0,0,0.0100,DELTA_T,OMEGA_MAX);
+Ec1multi rotEC(PC_10,PC_12,RESOLUTION); 
 
-
-unsigned int Count;
-unsigned char Flag;
-double dist;
+//モーター設定
+MotorController motor_rot(PC_6,PC_8,DELTA_T, rotEC,rot_speed_pid,rot_omega_pid);
 
 void RiseEcho(){
     ActiveTime.start();
@@ -124,18 +120,6 @@ int move_arm(char option){
     arm_up = 0;    
     return 1;
 }
-
-/**
- * @fn
- * @brief encoder program
- * @param 
- * @return 
- */
-//maxon DC motor 271566 角度制御を行う
-
-
-
-
 
 /**
  * @fn
