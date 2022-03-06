@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include "mbed.h"
 #include "EC.h"
-#include "SpeedController.h"
 #include "CalPID.h"
+#include "MotorController.h"
 
 CAN can1(PB_8,PB_9);
 char can_data[4]={1,0,0,0};//CAN送信用の配列4byte
@@ -111,84 +111,67 @@ int move_arm(char option){
  * @param 
  * @return 
  */
+//maxon DC motor 271566 角度制御を行う
 
-// program to obtain the angle the motor moved
-Ec::Ec(int res, int multi) : count_(0), pre_omega_(0), pre_count_(0), resolution_(res), multiplication_(multi)
-{
-    timer_.start();
-    setGearRatio(1);
-}
- 
-int Ec::getCount() const
-{
-    return count_;
-}
- 
-double Ec::getRad() const
-{
-    return count_ * 2.0f * M_PI / (multiplication_ * resolution_ * gear_ratio_);
-}
-double Ec::getDeg() const
-{
-    return count_ * 2.0f * 180.0 / (multiplication_ * resolution_ * gear_ratio_);
-}
-void Ec::calOmega()
-{
-    double t = timer_.read();
-    double delta_time = t - ptw_;
-    acceleration_ = (pre_omega_ - pre2_omega_) / delta_time;
-    pre2_omega_ = pre_omega_;
-    pre_omega_ = omega_;
-    omega_ = (count_ - pre_count_) * 2.0f * M_PI / (multiplication_ * resolution_ * delta_time);
-    omega_ /= gear_ratio_;
-    pre_count_ = count_;
-    ptw_ = t;
-}
- 
-double Ec::getOmega() const
-{
-    return omega_;
-}
-double Ec::getAcceleration() const
-{
-    return acceleration_;
-}
-void Ec::setResolution(int res)
-{
-    resolution_ = res;
-}
- 
-/*reset関数の定義*/
-/*エンコーダを初期状態に戻すことができる*/
-void Ec::reset()
-{
-    count_ = 0;
-    pre_count_ = 0, omega_ = 0;
-    ptw_ = 0;
-    timer_.stop();
-    timer_.reset();
-    timer_.start();
-}
-void Ec::setGearRatio(double gear_r)
-{
-    gear_ratio_ = gear_r;
-}
- 
-////////////////////////////////////////////////////1逓倍//////////////////////////////////////////////////////////////////
-Ec1multi::Ec1multi(PinName signalA, PinName signalB, int res) : Ec(res, 1), signalA_(signalA), signalB_(signalB)
-{
-    signalA_.rise(callback(this, &Ec1multi::upA));
-}
- 
-//ピン変化割り込み関数の定義
-void Ec1multi::upA()
-{
-    if (signalB_.read())
-        count_++;
-    else
-        count_--;
+
+#define RESOLUTION 500      //モーターの分解能　データシート参照
+#define DELTA_T 0.001       //pidの幅
+#define DUTY_MAX 0.5        //duty上限
+#define OMEGA_MAX 50        //ω上限
+#define TIME_STOP 10.0
+
+Serial pc(USBTX,USBRX);
+
+//PID設定
+CalPID rot_speed_pid(0.003,0,0.000013,DELTA_T,DUTY_MAX);
+//速度制御のPID,係数はモーターごとに調整の必要あり
+CalPID rot_duty_pid(0.003,0,0.000013,DELTA_T,DUTY_MAX);
+//角度制御のPID,モーターに出力されたduty比からフィードバックの場合
+CalPID rot_omega_pid(10.0,0,0.0100,DELTA_T,OMEGA_MAX);
+//角度制御のPID,SpeedControllerのωからフィードバックの場合
+
+//今回は関係ないけどただのメモ
+//角度制御のPIDに複数種類あり
+//1.ωの最大値を指定して制御するパターン
+//2.角度だけ設定して急いで動かすパターン
+
+//エンコーダ設定
+/*          (A層,B層,分解能)
+Ec1multi EC(p7,p8,RESOLUTION);  //1逓倍用classエンコーダ1回転で1024
+            or
+Ec2multi EC(p7,p8,RESOLUTION);  //2逓倍用classエンコーダ1回転で2048
+            or      */
+Ec1multi rotEC(PC_10,PC_12,RESOLUTION);  //4逓倍用classエンコーダ1回転で4096,精密な制御が行いたいので
+
+
+//モーター設定
+MotorController motor_rot(PC_6,PC_8,DELTA_T, rotEC,rot_speed_pid,rot_omega_pid); //引数は下行
+    //モーター正転、逆転、周期[s]、エンコーダ、速度制御用のPID、角度制御のPID
+
+Ticker ticker;
+
+void calcOmega();
+
+int main(){
+    ticker.attach(&calcOmega,0.01);//割り込み
+    int count=0;
+    double omega;
+   
+    while(1){
+        count = rotEC.getCount();
+        omega = rotEC.getOmega();
+        pc.printf("%d, ",count);
+        pc.printf("%lf\n",omega);
+        wait(1);
+    }
+   
+    motor_rot.Ac(30.0);
+   
 }
 
+void calcOmega(){
+    rotEC.calOmega();
+}
 
 /**
  * @fn
