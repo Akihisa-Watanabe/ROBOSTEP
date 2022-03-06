@@ -43,14 +43,13 @@ void RiseEcho(){
     ActiveTime.start();
 }
  
-double FallEcho(){
+void FallEcho(){
     unsigned long ActiveWidth;
     ActiveTime.stop();
     ActiveWidth = ActiveTime.read_us();
     dist = ActiveWidth * 0.0170; //音速：0.034cm/us　
     ActiveTime.reset();
     Flag = 1; //フラグのリセット
-    return dis;
 }
 
 void auto_arm(double threshold){
