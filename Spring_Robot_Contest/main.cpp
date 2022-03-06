@@ -32,6 +32,9 @@ arm_rotate_2.period(50);
 PwmOut PWM_TRIGER(PC_12); //超音波センサモジュールのTriger端子に入力する信号
 InterruptIn GET_PWM(PC_10); //割り込み入力端子の設定．マイコンから出力したPWM信号をD9端子から取り込む． 
 
+PwmOut servo(PC_7); //pin setting
+
+
 Timer ActiveTime; //タイマー計測用変数
 
 
@@ -249,6 +252,14 @@ int move_rack(char option){
  * @return int 処理が成功した場合は1を，失敗した場合は0を返す．
  */
 int servo(char option){
+    servo.period_us(20000);  //周期設定
+    while(1){
+        servo.pulsewidth_us(500); //パルス幅変更 開いた状態
+        wait(1);
+        servo.pulsewidth_us(1500); //閉じた状態
+        wait(3);
+    }
+}
     wait(5);
     return 1;
 }
