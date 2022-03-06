@@ -24,8 +24,8 @@ PwmOut rack_push(PC_6);
 rack_pull.period(50);
 rack_push.period(50);
 
-PwmOut arm_rotate_1(PB_6); 
-PwmOut arm_rotate_2(PA_5);
+PwmOut arm_rotate_1(PB_1); 
+PwmOut arm_rotate_2(PB_15);
 arm_rotate_1.period(50);
 arm_rotate_2.period(50);
 
