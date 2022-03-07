@@ -49,8 +49,8 @@ void print_result(int status){
  * @brief CAN通信で制御信号を受信してアームを制御する関数
  */
 void control(){
-    print_result(move_rack(0));
-    print_result(move_rack(1));
+    move_rack(0);
+    move_rack(1);
 }
 
 int main(){
