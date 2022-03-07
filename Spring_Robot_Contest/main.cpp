@@ -240,7 +240,7 @@ int main(){
     wait(10);
     wait(10);
 
-    can2.frequency(100000);
+    can1.frequency(100000);
 
     while(1){
         control();
