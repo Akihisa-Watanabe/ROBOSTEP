@@ -16,13 +16,9 @@
 #define OMEGA_MAX 50        //ω上限
 #define TIME_STOP 10.0
 
-char can_data[4]={1,0,0,0};//CAN送信用の配列4byte
-unsigned int Count;
-unsigned char Flag;
-double dist;
 
 Ticker ticker;
-Timer ActiveTime; //タイマー計測用変数
+
 
 void alert();
 int move_arm(char option=0);
@@ -55,38 +51,6 @@ Ec1multi rotEC(PC_10,PC_12,RESOLUTION);
 //モーター設定
 MotorController motor_rot(PC_6,PC_8,DELTA_T, rotEC,rot_speed_pid,rot_omega_pid);
 
-void RiseEcho(){
-    ActiveTime.start();
-}
- 
-void FallEcho(){
-    unsigned long ActiveWidth;
-    ActiveTime.stop();
-    ActiveWidth = ActiveTime.read_us();
-    dist = ActiveWidth * 0.0170; //音速：0.034cm/us　
-    ActiveTime.reset();
-    Flag = 1; //フラグのリセット
-}
-
-void auto_arm(double threshold){
-    GET_PWM.rise(&RiseEcho);
-    GET_PWM.fall(&FallEcho);
-    
-    PWM_TRIGER.period(0.1);
-    PWM_TRIGER.write(0.01f);
-    
-    Count=0;
-    Flag= 0;
-    ActiveTime.reset();
-    if (Flag==1){
-        if (dist < threshold){ //測定キョリが基準値よりも小さくなった場合
-            move_arm(1);
-        }
-        else{
-            move_arm(0);
-        }
-    }
-}
 /**
  * @fn
  * @brief アームを上下させる関数
@@ -100,13 +64,13 @@ int move_arm(char option){
     wait(5);
     
     switch (option){
-        case 0:
+        case 'a':
             while(i<=0.5){
                 i+=0.1;
                 arm_down = 0;
                 arm_up = i;
             }
-        case 1:
+        case 'b':
             while(i<=0.5){
                 i+=0.1;
                 arm_down = i;
@@ -170,13 +134,13 @@ int move_rack(char option){
     wait(5);
     switch (option){
             int i=0;
-        case 0:
+        case 'a':
             while(i<=0.5){
                 i+=0.1;
                 rack_pull = 0;
                 rack_push = i;
             }
-        case 1:
+        case 'b':
             while(i<=0.5){
                 i+=0.1;
                 rack_pull = i;
@@ -215,9 +179,12 @@ int servo_motor(char option){
  * @return 
  */
 void alert(){
+    //do nothing
+    /*
     can_data[0]=0;//エラーコード
     can1.write(CANMessage(2,can_data,4));
     can_data[1]=1;
+    */
 }
 
 
@@ -231,46 +198,33 @@ void control(){
     
     if (can1.read(msg)){
         if(msg.id == 0){
-            if (msg.data[3]==0){
-                if (msg.data[0]==2){
-                    if (msg.data[1] != 0){
-                        status = move_arm(msg.data[1]);              
+            if (msg.data[0]=='c'){
+                if (msg.data[1] != 'a'){
+                    status = move_arm(msg.data[1]);              
+                }
+                else if (msg.data[2] != 'a'){
+                    int angle;
+                    if (msg.data[2]=='b'){
+                        angle = 40;
                     }
-                    else if (msg.data[2] != 0){
-                        int angle;
-                        if (msg.data[2]==1){
-                            angle = 40;
-                        }
-                        else if (msg.data[2]==2){
-                            angle = 70;
-                        }
-                        else if (msg.data[2]==3){
-                            angle = 100;
-                        }
-                        else {
-                            alert();
-                        }
-                        status = rotate_arm(angle,angle+5);
+                    else if (msg.data[2]=='c'){
+                        angle = 70;
                     }
-                    else if (msg.data[3] != 0){
-                        status = move_rack(msg.data[2]);
+                    else if (msg.data[2]=='d'){
+                        angle = 100;
                     }
-
-                    if (status == 0){
+                    else {
                         alert();
                     }
+                    status = rotate_arm(angle,angle+5);
+                }
+                else if (msg.data[3] != 'a'){
+                    status = move_rack(msg.data[2]);
+                }
+                if (status == 0){
+                    alert();
                 }
             }
-            else if (msg.data[3]==1){
-                if (msg.data[1] != 0){
-                    status = move_arm(msg.data[1]);             
-                }
-                else{
-                    auto_arm(100);
-                }
-            }
-
-
         }
     }
 }
@@ -284,5 +238,12 @@ int main(){
     rack_push.period(0.05);
     move_arm(0);
     wait(10);
-    ticker.attach(&control,0.001);
+    wait(10);
+
+    can2.frequency(100000);
+
+    while(1){
+        control();
+        wait(0.5);  
+    }
 }
