@@ -65,17 +65,11 @@ int move_arm(char option){
     
     switch (option){
         case 'a':
-            while(i<=0.5){
-                i+=0.1;
                 arm_down = 0;
-                arm_up = i;
-            }
+                arm_up = 0.5;
         case 'b':
-            while(i<=0.5){
-                i+=0.1;
-                arm_down = i;
+                arm_down = 0.5;
                 arm_up = 0;
-            }
         default:
             return 0;
     }
@@ -94,17 +88,13 @@ int move_arm(char option){
 int rotate_arm(int min_theta, int max_theta){
     arm_rotate_1 = 0;
     arm_rotate_2 = 0;
-    int i=0;
     int theta;
     wait(5);
 
     while (1){
         theta = rotEC.getDeg();
-        if (i<=0.5){
-            i+=0.1;
-        }
         if (theta < min_theta){
-            arm_rotate_1 = i;
+            arm_rotate_1 = 0.5;
             arm_rotate_2 = 0;            
         }
         if ((min_theta <= theta)&&(theta <= max_theta)){
@@ -135,17 +125,11 @@ int move_rack(char option){
     switch (option){
             int i=0;
         case 'a':
-            while(i<=0.5){
-                i+=0.1;
-                rack_pull = 0;
-                rack_push = i;
-            }
+            rack_pull = 0;
+            rack_push = 0.5;
         case 'b':
-            while(i<=0.5){
-                i+=0.1;
-                rack_pull = i;
-                rack_push = 0;
-            }
+            rack_pull = 0.5;
+            rack_push = 0;
         default:
             return 0;
     }
